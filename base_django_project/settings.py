@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_filters",
+    "drf_yasg",
     "user",
 ]
 
@@ -123,3 +125,29 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static",
 ]
+
+# REST Framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+}
+
+# Swagger settings
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
+    'DEFAULT_FILTER_INSPECTORS': [
+        'base_django_project.swagger_inspectors.CustomFilterInspector',
+    ],
+    'DEFAULT_PAGINATOR_INSPECTORS': [],
+}

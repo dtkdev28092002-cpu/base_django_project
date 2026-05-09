@@ -73,15 +73,30 @@ A starter Django project with Django REST Framework (DRF), JWT authentication, a
 
 ## API Endpoints
 
-The project includes example Tag management endpoints:
+The project includes example Tag management endpoints with comprehensive query parameter support:
+
+### Available Query Parameters
+
+- `name` - Filter tags by name (case-insensitive partial match)
+- `created_after` - Filter tags created after date (ISO format: YYYY-MM-DDTHH:MM:SS)
+- `created_before` - Filter tags created before date (ISO format: YYYY-MM-DDTHH:MM:SS)
+- `search` - Search within tag names
+- `ordering` - Order results by field (prefix with `-` for descending)
+  - Available fields: `name`, `created_at`, `updated_at`
+  - Default: `-created_at` (newest first)
+
+### Endpoint Examples
 
 - `GET /api/tags/` - List all tags
+- `GET /api/tags/?name=python` - Filter tags containing "python"
+- `GET /api/tags/?search=django&ordering=name` - Search and sort by name
+- `GET /api/tags/?created_after=2024-01-01T00:00:00` - Filter by creation date
 - `POST /api/tags/` - Create a new tag
 - `GET /api/tags/{id}/` - Retrieve a specific tag
 - `PUT /api/tags/{id}/` - Update a specific tag
 - `DELETE /api/tags/{id}/` - Delete a specific tag
 
-All endpoints are documented in the Swagger UI and can be tested interactively.
+All endpoints are documented in the Swagger UI and can be tested interactively with query parameters.
 
 ## Using Swagger Documentation
 
@@ -118,6 +133,8 @@ Add to `requirements.txt`:
 
 ```txt
 drf-yasg==1.21.6
+django-filter==24.3  # For advanced filtering
+coreapi==2.3.3  # Required for django-filter schema generation
 setuptools<82  # Required for pkg_resources compatibility
 ```
 
@@ -128,7 +145,8 @@ Add to `INSTALLED_APPS` in `settings.py`:
 ```python
 INSTALLED_APPS = [
     # ... other apps
-    'drf_yasg',
+    'django_filters',  # For filtering
+    'drf_yasg',  # For API documentation
 ]
 ```
 
@@ -139,10 +157,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            # Windows
-            r'C:\path\to\your\venv\Lib\site-packages\drf_yasg\templates',
-            # macOS/Linux
-            '/path/to/your/venv/lib/python3.x/site-packages/drf_yasg/templates',
+            # Update this path to match your virtual environment
+            r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\templates",
         ],
         'APP_DIRS': True,
         # ... rest of template config
@@ -150,14 +166,31 @@ TEMPLATES = [
 ]
 
 STATICFILES_DIRS = [
-    # Windows
-    r'C:\path\to\your\venv\Lib\site-packages\drf_yasg\static',
-    # macOS/Linux
-    '/path/to/your/venv/lib/python3.x/site-packages/drf_yasg/static',
+    # Update this path to match your virtual environment
+    r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static",
 ]
 ```
 
-**Note**: Replace `python3.x` with your actual Python version (e.g., `python3.11`) and update the venv path to match your virtual environment location.
+**Note**: Update the paths above to match your virtual environment location. For Linux/macOS, the path would be something like `/path/to/venv/lib/python3.x/site-packages/drf_yasg/`.
+
+### Swagger Settings Configuration
+
+Add Swagger settings to disable automatic filter inspection (to avoid coreapi dependency issues):
+
+```python
+# Swagger settings
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'DEFAULT_FILTER_INSPECTORS': [],  # Disable automatic filter inspection
+}
+```
 
 ### URL Configuration
 
@@ -191,6 +224,8 @@ urlpatterns = [
 - **TemplateDoesNotExist**: Ensure the drf-yasg templates directory is in `TEMPLATES['DIRS']`
 - **Static files 404**: Ensure the drf-yasg static directory is in `STATICFILES_DIRS`
 - **pkg_resources error**: Use `setuptools<82` for compatibility with Python 3.14+
+- **coreapi must be installed error**: Add `'DEFAULT_FILTER_INSPECTORS': []` to `SWAGGER_SETTINGS` to disable automatic filter parameter inspection
+- **Query parameters not showing in Swagger**: Ensure manual parameters are defined using `@swagger_auto_schema` decorators with `manual_parameters`
 
 ## Development
 
