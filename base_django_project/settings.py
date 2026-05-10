@@ -86,6 +86,14 @@ DATABASES = {
     }
 }
 
+# JWT settings
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -104,6 +112,8 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+AUTH_USER_MODEL = "user.User"
 
 
 # Internationalization
@@ -133,6 +143,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'user.auth.IsAuthenticationCustom',
+    ),
 }
 
 # Swagger settings
@@ -142,10 +158,19 @@ SWAGGER_SETTINGS = {
         'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
-            'in': 'header'
+            'in': 'header',
+            'description': 'Format: Bearer <your_access_token>',
         }
     },
-    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
+    'SECURITY_REQUIREMENTS': [
+        {
+            'Bearer': []
+        }
+    ],
+
+    'DEFAULT_AUTO_SCHEMA_CLASS':
+        'drf_yasg.inspectors.SwaggerAutoSchema',
+
     'DEFAULT_FILTER_INSPECTORS': [
         'base_django_project.swagger_inspectors.CustomFilterInspector',
     ],
