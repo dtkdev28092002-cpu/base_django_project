@@ -5,14 +5,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
-from .filters import TagFilter
-from .models import Tag
+from .filters import CommentFilter, PostFilter, TagFilter
+from .models import Tag, Post, Comment
 from .serializers import (
-    TagSerializer, 
+    TagSerializer,
+    PostSerializer,
+    CommentSerializer,
     RegisterUserSerializer,
     RegisterAdminSerializer,
-    LoginSerializer, 
-    UserDetailSerializer
+    LoginSerializer,
+    TagWriteSerializer,
+    UserDetailSerializer,
+    UserSerializer,
 )
 from .auth import IsAdmin
 
@@ -36,18 +40,147 @@ class TagPagination(pagination.PageNumberPagination):
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
-    serializer_class = TagSerializer
     pagination_class = TagPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter
+    ]
     filterset_class = TagFilter
     search_fields = ['name']
-    ordering_fields = ['name', 'created_at', 'updated_at']
-    ordering = ['-created_at']  # Default ordering by newest first
+    ordering_fields = [
+        'name',
+        'created_at',
+        'updated_at'
+    ]
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action in [
+            'create',
+            'update',
+            'partial_update'
+        ]:
+            return TagWriteSerializer
+        return TagSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in [
+            'update',
+            'partial_update',
+            'destroy'
+        ]:
             return [IsAdmin()]
         return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tag = serializer.save(user=request.user)
+        response_serializer = TagSerializer(tag)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        tag = serializer.save(user=request.user)
+        response_serializer = TagSerializer(tag)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    pagination_class = TagPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PostFilter
+    search_fields = ['title', 'content']
+    ordering_fields = ['title', 'created_at', 'updated_at']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            from .serializers import PostWriteSerializer
+            return PostWriteSerializer
+        return PostSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        post = serializer.save(author=request.user)
+        response_serializer = PostSerializer(post)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        post = serializer.save(author=request.user)
+        response_serializer = PostSerializer(post)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    pagination_class = TagPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = CommentFilter
+    ordering_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            from .serializers import CommentWriteSerializer
+            return CommentWriteSerializer
+        return CommentSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save(author=request.user)
+        response_serializer = CommentSerializer(comment)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save(author=request.user)
+        response_serializer = CommentSerializer(comment)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK
+        )
+
 
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
@@ -68,7 +201,41 @@ class UserDetailView(APIView):
     def get(self, request):
         serializer = UserDetailSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+
+class TagMeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = Tag.objects.filter(user=request.user)
+        paginator = TagPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = TagSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class PostMeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = Post.objects.filter(author=request.user)
+        paginator = TagPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = PostSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class CommentMeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = Comment.objects.filter(author=request.user)
+        paginator = TagPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = CommentSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
 
@@ -77,14 +244,7 @@ class RegisterUserView(APIView):
         serializer = RegisterUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response({
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'full_name': user.full_name,
-                'username': user.username,
-            },
-        }, status=status.HTTP_201_CREATED)
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
     
 class RegisterAdminView(APIView):
     permission_classes = [AllowAny]
@@ -94,14 +254,7 @@ class RegisterAdminView(APIView):
         serializer = RegisterAdminSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response({
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'full_name': user.full_name,
-                'username': user.username,
-            },
-        }, status=status.HTTP_201_CREATED)
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class HealthCheckView(APIView):

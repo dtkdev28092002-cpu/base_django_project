@@ -2,13 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Role, Tag, User
+from .models import Role, Tag, User, Post, Comment
 
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = "__all__"
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,10 +11,83 @@ class RoleSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
+    roles = RoleSerializer(many=True, read_only=True)
     class Meta:
         model = User
         fields = ["id", "email", "full_name", "username", "roles", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+class TagSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "user", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "user"]
+
+class TagWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["name"]
+
+class PostSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    tag_ids = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, write_only=True, required=False)
+
+    class Meta:
+        model = Post
+        fields = ["id", "title", "content", "author", "tags", "tag_ids", "created_at", "updated_at"]
+        read_only_fields = ["id", "author", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        tags = validated_data.pop('tag_ids', [])
+        post = Post.objects.create(**validated_data)
+        if tags:
+            post.tags.set(tags)
+        return post
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tag_ids', None)
+        post = super().update(instance, validated_data)
+        if tags is not None:
+            post.tags.set(tags)
+        return post
+class PostWriteSerializer(serializers.ModelSerializer):
+    tag_ids = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, write_only=True, required=False)
+    class Meta:
+        model = Post
+        fields = ["title", "content", "tag_ids"]
+
+    def create(self, validated_data):
+        tags = validated_data.pop('tag_ids', [])
+        post = Post.objects.create(**validated_data)
+        if tags:
+            post.tags.set(tags)
+        return post
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tag_ids', None)
+        post = super().update(instance, validated_data)
+        if tags is not None:
+            post.tags.set(tags)
+        return post
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    post = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())
+    parent = serializers.PrimaryKeyRelatedField(queryset=Comment.objects.all(), allow_null=True, required=False)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "content", "author", "post", "parent", "created_at", "updated_at"]
+        read_only_fields = ["id", "author", "created_at", "updated_at"]
+
+
+class CommentWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["content", "post", "parent"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
