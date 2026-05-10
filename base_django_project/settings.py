@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -60,7 +61,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\templates",
+            config("SWAGGER_DIR", default=r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -133,7 +134,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [
-    r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static",
+    config("STATIC_DIR", default=r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static"),
 ]
 
 # REST Framework configuration

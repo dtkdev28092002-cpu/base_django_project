@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Users\\\\songo\\\\PycharmProjects\\\\base_django_project\" -Force | Select-Object Name, @{Name=\"Type\";Expression={if \\($_.PSIsContainer\\) {\"Directory\"} else {\"File\"}}} | Format-Table -AutoSize)"
+    ]
+  }
+}
