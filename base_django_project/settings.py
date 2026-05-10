@@ -149,6 +149,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'user.auth.IsAuthenticationCustom',
     ),
+    'EXCEPTION_HANDLER': 'user.response.custom_exception_handler',
 }
 
 # Swagger settings
