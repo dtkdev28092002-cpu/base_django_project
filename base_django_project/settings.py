@@ -174,5 +174,7 @@ SWAGGER_SETTINGS = {
     'DEFAULT_FILTER_INSPECTORS': [
         'base_django_project.swagger_inspectors.CustomFilterInspector',
     ],
-    'DEFAULT_PAGINATOR_INSPECTORS': [],
+    'DEFAULT_PAGINATOR_INSPECTORS': [
+        'base_django_project.swagger_inspectors.CustomPaginationInspector',
+    ],
 }

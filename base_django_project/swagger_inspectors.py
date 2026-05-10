@@ -3,7 +3,7 @@ from django_filters import FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_yasg import openapi
-from drf_yasg.inspectors import FilterInspector, NotHandled
+from drf_yasg.inspectors import FilterInspector, PaginatorInspector, NotHandled
 
 
 class CustomFilterInspector(FilterInspector):
@@ -69,3 +69,28 @@ class CustomFilterInspector(FilterInspector):
             return NotHandled
 
         return NotHandled
+
+
+class CustomPaginationInspector(PaginatorInspector):
+    def get_paginator_parameters(self, paginator):
+        parameters = []
+        if hasattr(paginator, 'page_size_query_param') and paginator.page_size_query_param:
+            parameters.append(
+                openapi.Parameter(
+                    'page',
+                    openapi.IN_QUERY,
+                    description='Page number',
+                    type=openapi.TYPE_INTEGER,
+                    required=False,
+                )
+            )
+            parameters.append(
+                openapi.Parameter(
+                    paginator.page_size_query_param,
+                    openapi.IN_QUERY,
+                    description='Number of items per page (max: %d)' % paginator.max_page_size,
+                    type=openapi.TYPE_INTEGER,
+                    required=False,
+                )
+            )
+        return parameters
