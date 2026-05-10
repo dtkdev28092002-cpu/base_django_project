@@ -12,6 +12,7 @@ from user.views import (
     UserDetailView,
     RegisterUserView,
     RegisterAdminView,
+    SendEmailView,
 )
 
 urlpatterns = [
@@ -28,4 +29,5 @@ urlpatterns = [
     path("comments/me/", CommentMeListView.as_view({"get": "list"}), name="comment-me"),
     path("comments/", CommentViewSet.as_view({"get": "list", "post": "create"}), name="comment-list"),
     path("comments/<int:pk>/", CommentViewSet.as_view({"get": "retrieve", "put": "update", "delete": "destroy"}), name="comment-detail"),
+    path("emails/send/", SendEmailView.as_view(), name="send-email"),
 ]

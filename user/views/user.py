@@ -9,7 +9,10 @@ from user.serializers import (
     RegisterUserSerializer,
     RegisterAdminSerializer,
     LoginSerializer,
+    SendEmailSerializer,
 )
+from user.email import send_template_email
+from user.auth import IsAdmin
 from .pagination import StandardizedAPIView
 
 
@@ -22,7 +25,7 @@ class UserLoginView(StandardizedAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         return Response(serializer.response(user), status=status.HTTP_200_OK)
-    
+
 
 class UserDetailView(StandardizedAPIView):
     permission_classes = [IsAuthenticated]
@@ -41,7 +44,7 @@ class RegisterUserView(StandardizedAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
-    
+
 
 class RegisterAdminView(StandardizedAPIView):
     permission_classes = [AllowAny]
@@ -52,3 +55,22 @@ class RegisterAdminView(StandardizedAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+class SendEmailView(StandardizedAPIView):
+    permission_classes = [IsAdmin]
+
+    @swagger_auto_schema(request_body=SendEmailSerializer)
+    def post(self, request):
+        serializer = SendEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        send_template_email(
+            to=data["to"],
+            subject=data["subject"],
+            template_name="emails/base.html",
+            context={**data["context"], "body": data["body"]},
+        )
+
+        return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)

@@ -57,12 +57,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "base_django_project.urls"
 
+_swagger_dir = config("SWAGGER_DIR", default="")
+_static_dir = config("STATIC_DIR", default="")
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            config("SWAGGER_DIR", default=r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\templates"),
-        ],
+        "DIRS": [d for d in [_swagger_dir] if d],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -82,8 +83,12 @@ WSGI_APPLICATION = "base_django_project.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+        "USER": config("DB_USER", default=""),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default=""),
+        "PORT": config("DB_PORT", default=""),
     }
 }
 
@@ -133,9 +138,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [
-    config("STATIC_DIR", default=r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static"),
-]
+STATICFILES_DIRS = [d for d in [_static_dir] if d]
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -152,6 +155,15 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'user.response.custom_exception_handler',
 }
+
+# Email settings
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
 
 # Swagger settings
 SWAGGER_SETTINGS = {

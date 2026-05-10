@@ -4,6 +4,7 @@ from .tag import TagSerializer, TagWriteSerializer
 from .post import PostSerializer, PostWriteSerializer
 from .comment import CommentSerializer, CommentWriteSerializer
 from .auth import RegisterUserSerializer, RegisterAdminSerializer, LoginSerializer
+from .email import SendEmailSerializer
 
 __all__ = [
     'RoleSerializer',
@@ -18,4 +19,5 @@ __all__ = [
     'RegisterUserSerializer',
     'RegisterAdminSerializer',
     'LoginSerializer',
+    'SendEmailSerializer',
 ]
