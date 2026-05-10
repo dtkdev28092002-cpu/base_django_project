@@ -77,6 +77,8 @@ The project includes example Tag management endpoints with comprehensive query p
 
 ### Available Query Parameters
 
+- `page` - Page number (default: 1)
+- `page_size` - Number of items per page (default: 10, max: 100)
 - `name` - Filter tags by name (case-insensitive partial match)
 - `created_after` - Filter tags created after date (ISO format: YYYY-MM-DDTHH:MM:SS)
 - `created_before` - Filter tags created before date (ISO format: YYYY-MM-DDTHH:MM:SS)
@@ -87,14 +89,28 @@ The project includes example Tag management endpoints with comprehensive query p
 
 ### Endpoint Examples
 
-- `GET /api/tags/` - List all tags
+- `GET /api/tags/` - List all tags (paginated)
+- `GET /api/tags/?page=1&page_size=20` - List tags with custom page size
 - `GET /api/tags/?name=python` - Filter tags containing "python"
 - `GET /api/tags/?search=django&ordering=name` - Search and sort by name
 - `GET /api/tags/?created_after=2024-01-01T00:00:00` - Filter by creation date
-- `POST /api/tags/` - Create a new tag
-- `GET /api/tags/{id}/` - Retrieve a specific tag
-- `PUT /api/tags/{id}/` - Update a specific tag
-- `DELETE /api/tags/{id}/` - Delete a specific tag
+- `POST /api/tags/` - Create a new tag (requires authentication)
+- `GET /api/tags/{id}/` - Retrieve a specific tag (requires authentication)
+- `PUT /api/tags/{id}/` - Update a specific tag (requires admin role)
+- `DELETE /api/tags/{id}/` - Delete a specific tag (requires admin role)
+
+### Pagination Response Format
+
+List endpoints return paginated responses:
+```json
+{
+  "page": 1,
+  "page_size": 10,
+  "total_page": 5,
+  "total_count": 50,
+  "results": [...]
+}
+```
 
 All endpoints are documented in the Swagger UI and can be tested interactively with query parameters.
 
