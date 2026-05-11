@@ -1,48 +1,75 @@
 # Base Django Project
 
-A starter Django project with Django REST Framework (DRF), JWT authentication, and Swagger API documentation setup. This project serves as a foundation for building RESTful APIs with user authentication and comprehensive API documentation.
+A starter Django REST Framework project with JWT authentication, role-based permissions, Swagger documentation, and a standardized API response envelope.
+
+## Quick Start
+
+```bash
+git clone <repository-url>
+cd base_django_project
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate      # macOS/Linux
+# venv\Scripts\activate       # Windows
+
+# Install dependencies and apply migrations
+pip install -r requirements.txt
+python manage.py migrate
+
+# Run the development server
+python manage.py runserver
+```
+
+API docs: `http://127.0.0.1:8000/swagger/`
 
 ## Features
 
-- Django 6.0.4
-- Django REST Framework for building APIs
-- JWT authentication using djangorestframework-simplejwt
-- **Swagger/OpenAPI documentation** with drf-yasg
-- PostgreSQL support (via psycopg2-binary)
-- Code formatting with Black and isort
-- Environment variable management with python-decouple
-- SQLite database for development
-- Tag management API endpoints (example implementation)
+- Django 6.0.4 + Django REST Framework
+- JWT authentication (`djangorestframework-simplejwt`) — 1-day access / 30-day refresh tokens
+- Role-based permissions (`user` / `admin` roles via M2M, not `is_staff`)
+- Standardized response envelope for all endpoints (success + error)
+- Swagger/OpenAPI docs via `drf-yasg` (`/swagger/`, `/redoc/`)
+- Filtering, search, and ordering on all list endpoints (`django-filter`)
+- Email utilities (plain text and HTML template)
+- Environment config via `python-decouple`
+- PostgreSQL support (SQLite default for development)
 
 ## Installation
 
-1. Clone the repository:
+1. Clone and enter the repo:
 
    ```bash
    git clone <repository-url>
    cd base_django_project
    ```
 
-2. Create a virtual environment:
+2. Create and activate a virtual environment:
 
    ```bash
    python -m venv venv
+   source venv/bin/activate      # macOS/Linux
+   venv\Scripts\activate         # Windows
    ```
 
-3. Activate the virtual environment:
-   - On Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - On macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-
-4. Install dependencies:
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
+   ```
+
+4. Create a `.env` file (copy from the example below):
+
+   ```env
+   SECRET_KEY=your-secret-key
+   DEBUG=True
+   # Optional — omit to use SQLite
+   DATABASE_URL=postgres://user:pass@localhost:5432/dbname
+   # Optional — for email sending
+   EMAIL_HOST=smtp.example.com
+   EMAIL_PORT=587
+   EMAIL_HOST_USER=user@example.com
+   EMAIL_HOST_PASSWORD=password
    ```
 
 5. Run migrations:
@@ -51,202 +78,108 @@ A starter Django project with Django REST Framework (DRF), JWT authentication, a
    python manage.py migrate
    ```
 
-6. Create a superuser (optional):
+6. Start the dev server:
 
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-7. Run the development server:
    ```bash
    python manage.py runserver
    ```
 
-## Usage
-
-- Access the Django admin at `http://127.0.0.1:8000/admin/`
-- **API Documentation (Swagger UI)**: `http://127.0.0.1:8000/swagger/`
-- **API Documentation (ReDoc)**: `http://127.0.0.1:8000/redoc/`
-- **Raw OpenAPI JSON**: `http://127.0.0.1:8000/swagger.json`
-- API endpoints are available under `/api/` path
-- Current API endpoints: Tag management (GET, POST, PUT, DELETE operations)
+**Note:** `settings.py` has hardcoded absolute paths for `drf_yasg` templates and static files pointing into the venv. If you move or recreate the venv, update `TEMPLATES['DIRS']` and `STATICFILES_DIRS` in `settings.py` to point to the new location (e.g., `venv/lib/python3.x/site-packages/drf_yasg/`).
 
 ## API Endpoints
 
-The project includes example Tag management endpoints with comprehensive query parameter support:
+All routes are under `/api/`. Full interactive docs at `http://127.0.0.1:8000/swagger/`.
 
-### Available Query Parameters
+### Auth
 
-- `page` - Page number (default: 1)
-- `page_size` - Number of items per page (default: 10, max: 100)
-- `name` - Filter tags by name (case-insensitive partial match)
-- `created_after` - Filter tags created after date (ISO format: YYYY-MM-DDTHH:MM:SS)
-- `created_before` - Filter tags created before date (ISO format: YYYY-MM-DDTHH:MM:SS)
-- `search` - Search within tag names
-- `ordering` - Order results by field (prefix with `-` for descending)
-  - Available fields: `name`, `created_at`, `updated_at`
-  - Default: `-created_at` (newest first)
+| Method | Path                        | Description                                     |
+| ------ | --------------------------- | ----------------------------------------------- |
+| POST   | `/api/auth/register/user/`  | Register a regular user                         |
+| POST   | `/api/auth/register/admin/` | Register an admin user                          |
+| POST   | `/api/auth/login/`          | Login — returns `access` + `refresh` JWT tokens |
+| GET    | `/api/auth/me/`             | Get current user profile                        |
 
-### Endpoint Examples
+### Tags / Posts / Comments
 
-- `GET /api/tags/` - List all tags (paginated)
-- `GET /api/tags/?page=1&page_size=20` - List tags with custom page size
-- `GET /api/tags/?name=python` - Filter tags containing "python"
-- `GET /api/tags/?search=django&ordering=name` - Search and sort by name
-- `GET /api/tags/?created_after=2024-01-01T00:00:00` - Filter by creation date
-- `POST /api/tags/` - Create a new tag (requires authentication)
-- `GET /api/tags/{id}/` - Retrieve a specific tag (requires authentication)
-- `PUT /api/tags/{id}/` - Update a specific tag (requires admin role)
-- `DELETE /api/tags/{id}/` - Delete a specific tag (requires admin role)
+Each resource follows the same pattern:
 
-### Pagination Response Format
+| Method    | Path                    | Auth     | Permission                           |
+| --------- | ----------------------- | -------- | ------------------------------------ |
+| GET       | `/api/{resource}/`      | Required | Any authenticated                    |
+| POST      | `/api/{resource}/`      | Required | Any authenticated                    |
+| GET       | `/api/{resource}/{id}/` | Required | Any authenticated                    |
+| PUT/PATCH | `/api/{resource}/{id}/` | Required | Admin only                           |
+| DELETE    | `/api/{resource}/{id}/` | Required | Admin only                           |
+| GET       | `/api/{resource}/me/`   | Required | Any authenticated (own records only) |
 
-List endpoints return paginated responses:
+Resources: `tags`, `posts`, `comments`.
+
+### Authentication header
+
+```
+Authorization: Bearer <access_token>
+```
+
+## Response Format
+
+All endpoints return a unified envelope:
+
+```json
+{ "code": 200, "status": "success", "message": "...", "data": { ... } }
+{ "code": 400, "status": "error",   "message": "...", "error": { ... } }
+```
+
+Paginated list responses include a `metadata` key:
+
 ```json
 {
-  "page": 1,
-  "page_size": 10,
-  "total_page": 5,
-  "total_count": 50,
-  "results": [...]
+  "code": 200,
+  "status": "success",
+  "message": "...",
+  "data": [...],
+  "metadata": { "page": 1, "page_size": 10, "total_page": 5, "total_count": 50 }
 }
 ```
 
-All endpoints are documented in the Swagger UI and can be tested interactively with query parameters.
+## Query Parameters
 
-## Using Swagger Documentation
+All list endpoints support:
 
-The Swagger UI provides an interactive interface to explore and test your API:
+| Parameter   | Description                            |
+| ----------- | -------------------------------------- |
+| `page`      | Page number (default: 1)               |
+| `page_size` | Items per page (default: 10, max: 100) |
+| `search`    | Full-text search                       |
+| `ordering`  | Field name, prefix `-` for descending  |
 
-1. **Access Swagger UI**: Navigate to `http://127.0.0.1:8000/swagger/`
+Resource-specific filters:
 
-2. **Explore Endpoints**:
-   - Click on any endpoint to expand it
-   - View request/response schemas
-   - See parameter requirements
-
-3. **Test Endpoints**:
-   - Click the "Try it out" button
-   - Fill in required parameters
-   - Click "Execute" to send the request
-   - View the response directly in the interface
-
-4. **Authentication** (if implemented):
-   - Use the "Authorize" button for JWT tokens
-   - Enter your authentication credentials
-
-5. **Alternative Views**:
-   - **ReDoc**: `http://127.0.0.1:8000/redoc/` - Clean, mobile-friendly documentation
-   - **Raw JSON**: `http://127.0.0.1:8000/swagger.json` - OpenAPI specification
-
-## API Documentation Setup
-
-This project uses `drf-yasg` (Yet Another Swagger Generator for Django Rest Framework) to provide interactive API documentation.
-
-### Dependencies
-
-Add to `requirements.txt`:
-
-```txt
-drf-yasg==1.21.6
-django-filter==24.3  # For advanced filtering
-coreapi==2.3.3  # Required for django-filter schema generation
-setuptools<82  # Required for pkg_resources compatibility
-```
-
-### Django Settings Configuration
-
-Add to `INSTALLED_APPS` in `settings.py`:
-
-```python
-INSTALLED_APPS = [
-    # ... other apps
-    'django_filters',  # For filtering
-    'drf_yasg',  # For API documentation
-]
-```
-
-Configure templates and static files in `settings.py`:
-
-```python
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            # Update this path to match your virtual environment
-            r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\templates",
-        ],
-        'APP_DIRS': True,
-        # ... rest of template config
-    },
-]
-
-STATICFILES_DIRS = [
-    # Update this path to match your virtual environment
-    r"D:\Users\songo\PycharmProjects\base_django_project\venv\Lib\site-packages\drf_yasg\static",
-]
-```
-
-**Note**: Update the paths above to match your virtual environment location. For Linux/macOS, the path would be something like `/path/to/venv/lib/python3.x/site-packages/drf_yasg/`.
-
-### Swagger Settings Configuration
-
-Add Swagger settings to disable automatic filter inspection (to avoid coreapi dependency issues):
-
-```python
-# Swagger settings
-SWAGGER_SETTINGS = {
-    'USE_SESSION_AUTH': False,
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header'
-        }
-    },
-    'DEFAULT_FILTER_INSPECTORS': [],  # Disable automatic filter inspection
-}
-```
-
-### URL Configuration
-
-Add to main `urls.py`:
-
-```python
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title="API Documentation",
-        default_version="v1",
-        description="Swagger documentation for your API",
-    ),
-    public=True,
-    permission_classes=[permissions.AllowAny],
-)
-
-urlpatterns = [
-    # ... other URLs
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-]
-```
-
-### Troubleshooting
-
-- **TemplateDoesNotExist**: Ensure the drf-yasg templates directory is in `TEMPLATES['DIRS']`
-- **Static files 404**: Ensure the drf-yasg static directory is in `STATICFILES_DIRS`
-- **pkg_resources error**: Use `setuptools<82` for compatibility with Python 3.14+
-- **coreapi must be installed error**: Add `'DEFAULT_FILTER_INSPECTORS': []` to `SWAGGER_SETTINGS` to disable automatic filter parameter inspection
-- **Query parameters not showing in Swagger**: Ensure manual parameters are defined using `@swagger_auto_schema` decorators with `manual_parameters`
+| Resource | Filter params                                 |
+| -------- | --------------------------------------------- |
+| Tags     | `name` (partial match)                        |
+| Posts    | `title`, `content`, `author_email`, `tag_ids` |
+| Comments | `content`, `author_email`, `post_title`       |
 
 ## Development
 
-- Format code with Black: `black .`
-- Sort imports with isort: `isort .`
+```bash
+# Update requirements.txt after installing new packages
+pip freeze > requirements.txt
+
+# Format
+black .
+isort .
+
+# Run all tests
+python manage.py test
+
+# Run a specific test
+python manage.py test user.tests.TestClassName.test_method_name
+
+# Send email via CLI
+python manage.py send_email --to user@example.com --subject "Hi" --body "Hello"
+python manage.py send_email --to user@example.com --subject "Hi" --template emails/base.html --context '{"name": "World"}'
+```
 
 ## License
 

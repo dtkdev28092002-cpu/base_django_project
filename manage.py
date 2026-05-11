@@ -3,10 +3,12 @@
 
 import os
 import sys
+import warnings
 
 
 def main():
     """Run administrative tasks."""
+    warnings.filterwarnings("ignore", message="pkg_resources is deprecated")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "base_django_project.settings")
     try:
         from django.core.management import execute_from_command_line
