@@ -1,4 +1,4 @@
-from .pagination import TagPagination, StandardizedAPIView, StandardizedModelViewSet, StandardizedReadOnlyModelViewSet
+from .pagination import PaginationData, StandardizedAPIView, StandardizedModelViewSet
 from .tag import TagViewSet, TagMeListView
 from .post import PostViewSet, PostMeListView
 from .comment import CommentViewSet, CommentMeListView
@@ -6,10 +6,9 @@ from .user import UserLoginView, UserDetailView, RegisterUserView, RegisterAdmin
 from .health import HealthCheckView
 
 __all__ = [
-    'TagPagination',
+    'PaginationData',
     'StandardizedAPIView',
     'StandardizedModelViewSet',
-    'StandardizedReadOnlyModelViewSet',
     'TagViewSet',
     'TagMeListView',
     'PostViewSet',

@@ -7,12 +7,12 @@ from user.models import Tag
 from user.serializers import TagSerializer, TagWriteSerializer
 from user.filters import TagFilter
 from user.auth import IsAdmin
-from .pagination import StandardizedModelViewSet, TagPagination
+from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class TagViewSet(StandardizedModelViewSet):
     queryset = Tag.objects.all()
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -58,7 +58,7 @@ class TagViewSet(StandardizedModelViewSet):
 
 class TagMeListView(StandardizedModelViewSet):
     permission_classes = [IsAuthenticated]
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

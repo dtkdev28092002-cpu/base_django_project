@@ -7,12 +7,12 @@ from user.models import Post
 from user.serializers import PostSerializer, PostWriteSerializer
 from user.filters import PostFilter
 from user.auth import IsAdmin
-from .pagination import StandardizedModelViewSet, TagPagination
+from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class PostViewSet(StandardizedModelViewSet):
     queryset = Post.objects.all()
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PostFilter
     search_fields = ['title', 'content']
@@ -54,7 +54,7 @@ class PostViewSet(StandardizedModelViewSet):
 
 class PostMeListView(StandardizedModelViewSet):
     permission_classes = [IsAuthenticated]
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

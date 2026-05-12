@@ -7,12 +7,12 @@ from user.models import Comment
 from user.serializers import CommentSerializer, CommentWriteSerializer
 from user.filters import CommentFilter
 from user.auth import IsAdmin
-from .pagination import StandardizedModelViewSet, TagPagination
+from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class CommentViewSet(StandardizedModelViewSet):
     queryset = Comment.objects.all()
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CommentFilter
     ordering_fields = ['created_at', 'updated_at']
@@ -53,7 +53,7 @@ class CommentViewSet(StandardizedModelViewSet):
 
 class CommentMeListView(StandardizedModelViewSet):
     permission_classes = [IsAuthenticated]
-    pagination_class = TagPagination
+    pagination_class = PaginationData
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

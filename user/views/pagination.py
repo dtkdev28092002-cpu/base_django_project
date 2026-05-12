@@ -35,11 +35,7 @@ class StandardizedModelViewSet(StandardizedResponseMixin, viewsets.ModelViewSet)
     pass
 
 
-class StandardizedReadOnlyModelViewSet(StandardizedResponseMixin, viewsets.ReadOnlyModelViewSet):
-    pass
-
-
-class TagPagination(pagination.PageNumberPagination):
+class PaginationData(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100

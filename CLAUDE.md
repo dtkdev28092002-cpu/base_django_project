@@ -78,7 +78,7 @@ Views inherit `StandardizedModelViewSet` (extends `viewsets.ModelViewSet` + `Sta
 - Read serializers nest related objects (e.g., full `UserSerializer` for `author`); write serializers accept IDs (e.g., `tag_ids` array instead of nested tag objects).
 - `get_permissions()` returns `[IsAdmin()]` for `update`/`destroy`, `[IsAuthenticationCustom()]` for the rest.
 - `create()` calls `serializer.save(user=request.user)` to attach the authenticated user — this is not done inside the serializer.
-- `TagPagination` is set as `pagination_class` on all list views (page_size=10, max=100).
+- `PaginationData` is set as `pagination_class` on all list views (page_size=10, max=100).
 - Each resource has a `*MeListView` (e.g., `TagMeListView`) that filters the queryset to `request.user`'s own records.
 
 ### Filters
@@ -108,19 +108,19 @@ Email template lives at `user/templates/emails/base.html`.
 
 ### Swagger inspectors
 
-`base_django_project/swagger_inspectors.py` provides `CustomFilterInspector` and `CustomPaginationInspector` to expose `DjangoFilterBackend`, `SearchFilter`, `OrderingFilter`, and `TagPagination` parameters in the Swagger UI. When adding new filter backends or a different paginator, update these inspectors.
+`base_django_project/swagger_inspectors.py` provides `CustomFilterInspector` and `CustomPaginationInspector` to expose `DjangoFilterBackend`, `SearchFilter`, `OrderingFilter`, and `PaginationData` parameters in the Swagger UI. When adding new filter backends or a different paginator, update these inspectors.
 
 ## URL structure
 
 All API routes are under `/api/` (mounted in [base_django_project/urls.py](base_django_project/urls.py), defined in [user/urls.py](user/urls.py)):
 
-| Prefix | ViewSet / View |
-|---|---|
+| Prefix                                        | ViewSet / View                          |
+| --------------------------------------------- | --------------------------------------- |
 | `auth/register/user/`, `auth/register/admin/` | `RegisterUserView`, `RegisterAdminView` |
-| `auth/login/` | `UserLoginView` |
-| `auth/me/` | `UserDetailView` |
-| `tags/`, `tags/<pk>/`, `tags/me/` | `TagViewSet`, `TagMeListView` |
-| `posts/`, `posts/<pk>/`, `posts/me/` | `PostViewSet`, `PostMeListView` |
-| `comments/`, `comments/<pk>/`, `comments/me/` | `CommentViewSet`, `CommentMeListView` |
+| `auth/login/`                                 | `UserLoginView`                         |
+| `auth/me/`                                    | `UserDetailView`                        |
+| `tags/`, `tags/<pk>/`, `tags/me/`             | `TagViewSet`, `TagMeListView`           |
+| `posts/`, `posts/<pk>/`, `posts/me/`          | `PostViewSet`, `PostMeListView`         |
+| `comments/`, `comments/<pk>/`, `comments/me/` | `CommentViewSet`, `CommentMeListView`   |
 
 All list endpoints support `search`, `ordering`, `page`, `page_size` query params plus resource-specific filters.
