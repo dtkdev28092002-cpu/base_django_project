@@ -19,7 +19,11 @@
       <h1>{% block header %}Notification{% endblock %}</h1>
     </div>
     <div class="body">
-      {% block content %}{{ body }}{% endblock %}
+      {% block content %}
+        {% if name %}<p>Hi {{ name }},</p>{% endif %}
+        <p>{{ body }}</p>
+        {% if action_url %}<a href="{{ action_url }}" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;">Click here</a>{% endif %}
+      {% endblock %}
     </div>
     <div class="footer">
       {% block footer %}&copy; {{ year }} {{ site_name|default:"My App" }}. All rights reserved.{% endblock %}
