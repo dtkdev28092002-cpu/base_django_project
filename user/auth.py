@@ -10,12 +10,9 @@ class IsAuthenticationCustom(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    """
-    Custom permission class to check if user has admin role.
-    """
     def has_permission(self, request, view):
-        return (
-            request.user and
-            request.user.is_authenticated and
-            request.user.roles.filter(name='admin').exists()
-        )
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if not hasattr(request.user, '_is_admin_cached'):
+            request.user._is_admin_cached = request.user.roles.filter(name='admin').exists()
+        return request.user._is_admin_cached

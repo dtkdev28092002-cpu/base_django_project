@@ -11,7 +11,7 @@ from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class CommentViewSet(StandardizedModelViewSet):
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.select_related('author', 'post', 'parent').prefetch_related('author__roles')
     pagination_class = PaginationData
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CommentFilter
@@ -28,13 +28,15 @@ class CommentViewSet(StandardizedModelViewSet):
             return CommentWriteSerializer
         return CommentSerializer
 
+    def _fetch_with_relations(self, pk):
+        return Comment.objects.select_related('author', 'post', 'parent').prefetch_related('author__roles').get(pk=pk)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         comment = serializer.save(author=request.user)
-        response_serializer = CommentSerializer(comment)
         return Response(
-            response_serializer.data,
+            CommentSerializer(self._fetch_with_relations(comment.pk)).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -44,9 +46,8 @@ class CommentViewSet(StandardizedModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         comment = serializer.save(author=request.user)
-        response_serializer = CommentSerializer(comment)
         return Response(
-            response_serializer.data,
+            CommentSerializer(self._fetch_with_relations(comment.pk)).data,
             status=status.HTTP_200_OK
         )
 
@@ -65,4 +66,5 @@ class CommentMeListView(StandardizedModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        return Comment.objects.filter(author=self.request.user)
+        return Comment.objects.filter(author=self.request.user) \
+            .select_related('author', 'post', 'parent').prefetch_related('author__roles')

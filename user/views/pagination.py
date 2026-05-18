@@ -1,3 +1,4 @@
+from math import ceil
 from rest_framework import pagination, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,7 +42,6 @@ class PaginationData(pagination.PageNumberPagination):
     max_page_size = 100
 
     def get_paginated_response(self, data):
-        from math import ceil
         total_pages = ceil(self.page.paginator.count / self.get_page_size(self.request)) if self.page.paginator.count > 0 else 1
         metadata = {
             'page': self.page.number,

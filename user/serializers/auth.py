@@ -20,13 +20,11 @@ class RegisterUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create(**validated_data)
+        user = User(**validated_data)
         user.set_password(password)
         user.save()
-        
         role, _ = Role.objects.get_or_create(name=Role.ROLE_USER)
         user.roles.add(role)
-        
         return user
 
 
@@ -46,14 +44,12 @@ class RegisterAdminSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create(**validated_data)
+        user = User(**validated_data)
         user.set_password(password)
         user.save()
-        
         user_role, _ = Role.objects.get_or_create(name=Role.ROLE_USER)
         admin_role, _ = Role.objects.get_or_create(name=Role.ROLE_ADMIN)
         user.roles.add(user_role, admin_role)
-        
         return user
 
 

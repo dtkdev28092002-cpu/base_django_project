@@ -11,7 +11,7 @@ from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class PostViewSet(StandardizedModelViewSet):
-    queryset = Post.objects.all()
+    queryset = Post.objects.select_related('author').prefetch_related('author__roles', 'tags')
     pagination_class = PaginationData
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PostFilter
@@ -29,25 +29,26 @@ class PostViewSet(StandardizedModelViewSet):
             return PostWriteSerializer
         return PostSerializer
 
+    def _fetch_with_relations(self, pk):
+        return Post.objects.select_related('author').prefetch_related('author__roles', 'tags').get(pk=pk)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(author=request.user)
-        response_serializer = PostSerializer(post)
         return Response(
-            response_serializer.data,
+            PostSerializer(self._fetch_with_relations(post.pk)).data,
             status=status.HTTP_201_CREATED
         )
-    
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(author=request.user)
-        response_serializer = PostSerializer(post)
         return Response(
-            response_serializer.data,
+            PostSerializer(self._fetch_with_relations(post.pk)).data,
             status=status.HTTP_200_OK
         )
 
@@ -67,4 +68,5 @@ class PostMeListView(StandardizedModelViewSet):
     serializer_class = PostSerializer
 
     def get_queryset(self):
-        return Post.objects.filter(author=self.request.user)
+        return Post.objects.filter(author=self.request.user) \
+            .select_related('author').prefetch_related('author__roles', 'tags')

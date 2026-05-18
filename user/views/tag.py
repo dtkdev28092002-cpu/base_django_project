@@ -11,7 +11,7 @@ from .pagination import StandardizedModelViewSet, PaginationData
 
 
 class TagViewSet(StandardizedModelViewSet):
-    queryset = Tag.objects.all()
+    queryset = Tag.objects.select_related('user').prefetch_related('user__roles')
     pagination_class = PaginationData
     filter_backends = [
         DjangoFilterBackend,
@@ -33,13 +33,15 @@ class TagViewSet(StandardizedModelViewSet):
             return [IsAdmin()]
         return [IsAuthenticated()]
 
+    def _fetch_with_relations(self, pk):
+        return Tag.objects.select_related('user').prefetch_related('user__roles').get(pk=pk)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tag = serializer.save(user=request.user)
-        response_serializer = TagSerializer(tag)
         return Response(
-            response_serializer.data,
+            TagSerializer(self._fetch_with_relations(tag.pk)).data,
             status=status.HTTP_201_CREATED
         )
 
@@ -49,9 +51,8 @@ class TagViewSet(StandardizedModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         tag = serializer.save(user=request.user)
-        response_serializer = TagSerializer(tag)
         return Response(
-            response_serializer.data,
+            TagSerializer(self._fetch_with_relations(tag.pk)).data,
             status=status.HTTP_200_OK
         )
 
@@ -71,4 +72,5 @@ class TagMeListView(StandardizedModelViewSet):
     serializer_class = TagSerializer
 
     def get_queryset(self):
-        return Tag.objects.filter(user=self.request.user)
+        return Tag.objects.filter(user=self.request.user) \
+            .select_related('user').prefetch_related('user__roles')
